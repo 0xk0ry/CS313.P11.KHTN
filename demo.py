@@ -17,6 +17,7 @@ ae_threshold=0.0024469797
 vae_upperbound=0.6856143474578857
 vae_lowerbound=0.6788296699523926
 bigan_threshold=0.68333566
+
 if 'anomaly_count' not in st.session_state:
     st.session_state['anomaly_count'] = 0
     
@@ -37,7 +38,6 @@ def load_model():
     return AEmodel, VAEmodel, BIGANmodel
     # return VAEmodel
 
-autoencoder, vae, bigan = load_model()
     
 def process_drawing(drawing_data, num_points=140, y_min=-8, y_max=8):
     """Process the drawing data into evenly spaced points and scale them."""
@@ -298,6 +298,7 @@ with st.container():
         
     st.markdown('</div>', unsafe_allow_html=True)
 
+autoencoder, vae, bigan = load_model()
 if upload_btn is not None and analyze_btn is not None:
     processed_data = process_csv(upload_btn)[:100]  # Process first 100 rows
     results = []
