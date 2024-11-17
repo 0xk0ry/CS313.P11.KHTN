@@ -6,3 +6,5 @@ plotly
 tensorflow-probability
 streamlit-drawable-canvas
 matplotlib
+seaborn
+scikit-learn
