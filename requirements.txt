@@ -1,0 +1,7 @@
+streamlit
+numpy
+tensorflow
+pandas
+plotly
+tensorflow-probability
+streamlit-drawable-canvas
