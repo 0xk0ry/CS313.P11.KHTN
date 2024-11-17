@@ -5,3 +5,4 @@ pandas
 plotly
 tensorflow-probability
 streamlit-drawable-canvas
+matplotlib
