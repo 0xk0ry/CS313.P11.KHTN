@@ -244,7 +244,7 @@ def check_anomalies(row_data, models, thresholds):
         }
 
 # Streamlit app
-st.set_page_config(layout="wide")
+st.set_page_config(page_title="ECG Analysis", layout="wide")
 st.markdown("<h1 style='text-align: center;'>Analyze ECG</h1>", unsafe_allow_html=True)
 
 # Add custom CSS with more specific selectors
@@ -283,8 +283,9 @@ with st.container():
 
     # Buttons in col2
     with col2:
+        title = st.write("<p style=\"font-size:19px\"> Draw something and see the magic happens 🗿</p>", unsafe_allow_html=True)
         delete_btn = st.button("Delete Drawing")
-        analyze_btn = st.button("Analyze")
+        analyze_btn = st.button("Analyze Drawing")
         upload_btn = st.file_uploader("Upload CSV", type=['csv'])
 
         # Placeholder for the download button
