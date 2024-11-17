@@ -19,6 +19,8 @@ vae_lowerbound=0.6788296699523926
 bigan_threshold=0.68333566
 if 'anomaly_count' not in st.session_state:
     st.session_state['anomaly_count'] = 0
+    
+@st.cache_resource
 def load_model():
     AEmodel = Autoencoder()
     AEmodel.encoder = tf.keras.models.load_model("model/autoencoder-encoder.keras")
@@ -34,10 +36,9 @@ def load_model():
     BIGANmodel.discriminator = tf.keras.models.load_model("model/bigan-discriminator.keras")
     return AEmodel, VAEmodel, BIGANmodel
     # return VAEmodel
-# Load pre-trained weights
 
-# autoencoder = tf.keras.models.load_model('autoencoder.h5',compile=False)
-
+autoencoder, vae, bigan = load_model()
+    
 def process_drawing(drawing_data, num_points=140, y_min=-8, y_max=8):
     """Process the drawing data into evenly spaced points and scale them."""
     if not drawing_data["objects"]:
@@ -128,7 +129,8 @@ def check_anomalies(row_data, models, thresholds):
         fig_ae.add_trace(go.Scatter(
             y=reconstructed_ae[0],
             mode='lines',
-            name='Reconstructed Data'
+            name='Reconstructed Data',
+            line=dict(color='sandybrown')
         ))
 
         # Update layout with legend inside the plot
@@ -159,7 +161,8 @@ def check_anomalies(row_data, models, thresholds):
         fig_vae.add_trace(go.Scatter(
             y=reconstructed_vae.reshape(140),
             mode='lines',
-            name='Reconstructed Data'
+            name='Reconstructed Data',
+            line=dict(color='sandybrown')
         ))
         fig_vae.update_layout(
             legend=dict(
@@ -182,7 +185,8 @@ def check_anomalies(row_data, models, thresholds):
         fig_bigan.add_trace(go.Scatter(
             y=reconstructed_bigan[0],
             mode='lines',
-            name='Reconstructed Data'
+            name='Reconstructed Data',
+            line=dict(color='sandybrown')
         ))
         fig_bigan.update_layout(
             legend=dict(
@@ -296,7 +300,6 @@ with st.container():
 
 if upload_btn is not None and analyze_btn is not None:
     processed_data = process_csv(upload_btn)[:100]  # Process first 100 rows
-    autoencoder, vae, bigan = load_model()
     results = []
     if processed_data is not None:
         models = (autoencoder, vae, bigan)
@@ -347,7 +350,6 @@ if upload_btn is not None and analyze_btn is not None:
             )                
 elif (analyze_btn and canvas_result.json_data is not None):
     processed_data = process_drawing(canvas_result.json_data)
-    autoencoder, vae, bigan = load_model()
     if processed_data is not None:
         processed_data = np.array(processed_data).reshape(1, -1)
         scaled_processed_data = (processed_data - min_val) / (max_val - min_val)
@@ -385,7 +387,8 @@ elif (analyze_btn and canvas_result.json_data is not None):
         fig_ae.add_trace(go.Scatter(
             y=reconstructed_ae[0],
             mode='lines',
-            name='Reconstructed Data'
+            name='Reconstructed Data',
+            line=dict(color='sandybrown')
         ))
 
         # Update layout with legend inside the plot
@@ -416,7 +419,8 @@ elif (analyze_btn and canvas_result.json_data is not None):
         fig_vae.add_trace(go.Scatter(
             y=reconstructed_vae.reshape(140),
             mode='lines',
-            name='Reconstructed Data'
+            name='Reconstructed Data',
+            line=dict(color='sandybrown')
         ))
         fig_vae.update_layout(
             legend=dict(
@@ -439,7 +443,8 @@ elif (analyze_btn and canvas_result.json_data is not None):
         fig_bigan.add_trace(go.Scatter(
             y=reconstructed_bigan[0],
             mode='lines',
-            name='Reconstructed Data'
+            name='Reconstructed Data',
+            line=dict(color='sandybrown')
         ))
         fig_bigan.update_layout(
             legend=dict(
