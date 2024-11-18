@@ -81,9 +81,9 @@ def process_drawing(drawing_data, num_points=140, y_min=-8, y_max=8):
     
     return y_scaled
 
-def process_csv(file):
+def process_csv(df):
     try:
-        df = pd.read_csv(file)
+        # df = pd.read_csv(file)
         # Get all rows but only first 140 columns
         data = df.iloc[:, :140].values
         if data.shape[1] != 140:
@@ -264,7 +264,7 @@ with st.container():
     st.markdown('<div class="canvas-container">', unsafe_allow_html=True)
     
     # Create columns
-    left_space, col1, col2, right_space = st.columns([1, 1.5, 1, 1])
+    left_space, col1, col2, right_space = st.columns([0.5, 1.5, 1, 0.5])
 
     # Canvas in col1
     with col1:
@@ -287,7 +287,7 @@ with st.container():
         delete_btn = st.button("Delete Drawing")
         analyze_btn = st.button("Analyze Drawing")
         upload_btn = st.file_uploader("Upload CSV", type=['csv'])
-
+        row_amount_placeholder = st.empty()
         # Placeholder for the download button
         download_button_placeholder = st.empty()
 
@@ -300,56 +300,64 @@ with st.container():
     st.markdown('</div>', unsafe_allow_html=True)
 
 autoencoder, vae, bigan = load_model()
-if upload_btn is not None and analyze_btn is not None:
-    processed_data = process_csv(upload_btn)[:100]  # Process first 100 rows
-    results = []
-    if processed_data is not None:
-        models = (autoencoder, vae, bigan)
-        thresholds = (ae_threshold, (vae_lowerbound, vae_upperbound), bigan_threshold)
-        total_rows = len(processed_data)
+# Process the uploaded CSV file if a file is uploaded
+if upload_btn is not None:
+    try:
+        df = pd.read_csv(upload_btn)
+        max_value = len(df.index)
+    except Exception as e:
+        st.error(f"Error processing CSV: {str(e)}")
+    row_amount = row_amount_placeholder.number_input(f"Number of rows to process (Max amount: {max_value})", min_value=1, max_value=max_value, value=None, step=1)
+    if row_amount and analyze_btn is not None:
+        processed_data = process_csv(df)[:row_amount]
+        results = []
+        if processed_data is not None:
+            models = (autoencoder, vae, bigan)
+            thresholds = (ae_threshold, (vae_lowerbound, vae_upperbound), bigan_threshold)
+            total_rows = len(processed_data)
 
-        # Reset anomaly count and create placeholders
-        st.session_state['anomaly_count'] = 0
-        anomaly_placeholder = st.empty()
-        progress_bar = st.progress(0)
+            # Reset anomaly count and create placeholders
+            st.session_state['anomaly_count'] = 0
+            anomaly_placeholder = st.empty()
+            progress_bar = st.progress(0)
 
-        for idx, row in enumerate(processed_data):
-            row_data = row.reshape(1, -1)
-            result = check_anomalies(row_data, models, thresholds)
-            ae_pred = result['ae_pred']
-            vae_pred = result['vae_pred']
-            bigan_pred = result['bigan_pred']
-            results.append({
-                'row_index': idx,
-                'ae_pred': "Normal" if ae_pred else "Anomaly",
-                'vae_pred': "Normal" if vae_pred else "Anomaly",
-                'bigan_pred': "Normal" if bigan_pred else "Anomaly"
-            })
-            count = int(ae_pred) + int(vae_pred) + int(bigan_pred)
-            if count < 2:
-                st.session_state['anomaly_count'] += 1
+            for idx, row in enumerate(processed_data):
+                row_data = row.reshape(1, -1)
+                result = check_anomalies(row_data, models, thresholds)
+                ae_pred = result['ae_pred']
+                vae_pred = result['vae_pred']
+                bigan_pred = result['bigan_pred']
+                results.append({
+                    'row_index': idx,
+                    'ae_pred': "Normal" if ae_pred else "Anomaly",
+                    'vae_pred': "Normal" if vae_pred else "Anomaly",
+                    'bigan_pred': "Normal" if bigan_pred else "Anomaly"
+                })
+                count = int(ae_pred) + int(vae_pred) + int(bigan_pred)
+                if count < 2:
+                    st.session_state['anomaly_count'] += 1
 
-            # Update the placeholder with the current anomaly count
-            anomaly_placeholder.write(f"Found {st.session_state['anomaly_count']} anomalies in {total_rows} rows")
+                # Update the placeholder with the current anomaly count
+                anomaly_placeholder.write(f"Found {st.session_state['anomaly_count']} anomalies in {total_rows} rows")
 
-            # Update progress bar
-            progress = (idx + 1) / total_rows
-            progress_bar.progress(progress)
-        
-        # Ensure progress bar completes
-        progress_bar.progress(1.0)
+                # Update progress bar
+                progress = (idx + 1) / total_rows
+                progress_bar.progress(progress)
+            
+            # Ensure progress bar completes
+            progress_bar.progress(1.0)
 
-        # Convert results to JSON string
-        json_results = json.dumps(results, indent=4)
+            # Convert results to JSON string
+            json_results = json.dumps(results, indent=4)
 
-        # Update the download button placeholder to add the button below the upload button
-        with col2:
-            download_button_placeholder.download_button(
-                label="Download Results as JSON",
-                data=json_results,
-                file_name='results.json',
-                mime='application/json'
-            )                
+            # Update the download button placeholder to add the button below the upload button
+            with col2:
+                download_button_placeholder.download_button(
+                    label="Download Results as JSON",
+                    data=json_results,
+                    file_name='results.json',
+                    mime='application/json'
+                )
 elif (analyze_btn and canvas_result.json_data is not None):
     processed_data = process_drawing(canvas_result.json_data)
     if processed_data is not None:
